@@ -9,7 +9,8 @@ module.exports = {
     "noMention": true,
     "noMentionLikelihood": 100,
     "prompts": [
-      /(https?:\/\/[^\s\/]*deviantart.com\/[^\s\/]+\/art\/[^\s]+)/gi
+      /https?:\/\/(?:[^\s/]*\.)?deviantart\.com\/(?:[^\s/]+\/)?art\/[\w\-~$*+=%]+-\d+/gi,
+      /(?:https?:\/\/|www\.)?sta\.sh\/\w+/gi
     ],
     "role": "All",
     "channels": [
@@ -22,12 +23,16 @@ module.exports = {
 
     setTimeout(function() {
       if (message.embeds.length == 0) {
-        var link = message.content.match(self.command.prompts[0]);
+        var nospoilers = message.content.replace(/<[^\s>]+>/g, ' ').replace(/\|\|[^|]+\|\|/g, ' ');
 
-        bot.helpers.getMETA(link[0], function(meta) {
-          if (meta.image) {
-            message.reply(chance.pickone(bot.soul('deviantArtResponses')), {embed: {image: {url: meta.image}}});
-          }
+        self.command.prompts.forEach(function(prompt) {
+          (nospoilers.match(prompt)||[]).forEach(function(link) {
+            bot.helpers.getMETA(link, function(meta) {
+              if (meta.image) {
+                message.reply(chance.pickone(bot.soul('deviantArtResponses')), {embed: {image: {url: meta.image}}});
+              }
+            });
+          });
         });
       }
     }, 5000);
